@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import type React from "react"
+
+import { useState, useEffect, useRef } from "react"
 import { useWallet } from "@solana/wallet-adapter-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,13 +25,19 @@ export function PaymentForm({ onPaymentGenerated }: PaymentFormProps) {
   const [paymentLabel, setPaymentLabel] = useState("")
   const [paymentLink, setPaymentLink] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const userEditedRef = useRef(false)
 
-  // Auto-populate recipient address with connected wallet address when wallet is connected
+  // Auto-populate recipient address with connected wallet address only on initial mount or wallet change
   useEffect(() => {
-    if (publicKey && !recipientAddress) {
+    if (publicKey && !userEditedRef.current) {
       setRecipientAddress(publicKey.toBase58())
     }
-  }, [publicKey, recipientAddress])
+  }, [publicKey])
+
+  const handleRecipientChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    userEditedRef.current = true
+    setRecipientAddress(e.target.value)
+  }
 
   const validateForm = () => {
     if (!amount || Number.parseFloat(amount) <= 0) {
@@ -90,16 +98,16 @@ export function PaymentForm({ onPaymentGenerated }: PaymentFormProps) {
         </Alert>
       )}
 
-      <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
-        <h3 className="font-medium text-blue-800 mb-2">How This Works:</h3>
-        <p className="text-sm text-blue-700">
+      <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4 dark:bg-blue-950 dark:border-blue-900">
+        <h3 className="font-medium text-blue-800 mb-2 dark:text-blue-300">How This Works:</h3>
+        <p className="text-sm text-blue-700 dark:text-blue-400">
           1. Your connected wallet ({publicKey.toString().slice(0, 4)}...{publicKey.toString().slice(-4)}) will be used
           to <strong>create</strong> the payment request.
         </p>
-        <p className="text-sm text-blue-700 mt-1">
+        <p className="text-sm text-blue-700 mt-1 dark:text-blue-400">
           2. The recipient address is pre-filled with your wallet address, but you can change it to any other address.
         </p>
-        <p className="text-sm text-blue-700 mt-1">
+        <p className="text-sm text-blue-700 mt-1 dark:text-blue-400">
           3. When someone scans the QR code, their wallet will prompt them to send the specified amount to the
           recipient.
         </p>
@@ -137,7 +145,7 @@ export function PaymentForm({ onPaymentGenerated }: PaymentFormProps) {
           id="recipient"
           placeholder="Enter Solana wallet address where funds will be sent"
           value={recipientAddress}
-          onChange={(e) => setRecipientAddress(e.target.value)}
+          onChange={handleRecipientChange}
           className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
         />
       </div>
@@ -158,9 +166,9 @@ export function PaymentForm({ onPaymentGenerated }: PaymentFormProps) {
       </Button>
 
       {paymentLink && (
-        <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
-            <p className="text-sm text-yellow-800">
+        <div className="mt-6 p-4 bg-gray-100 rounded-lg dark:bg-gray-800">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4 dark:bg-yellow-900 dark:border-yellow-800">
+            <p className="text-sm text-yellow-800 dark:text-yellow-200">
               <strong>Note:</strong> This QR code is for others to scan and pay you. When someone scans this with their
               Phantom app, they will be prompted to send {amount} SOL to {recipientAddress.slice(0, 4)}...
               {recipientAddress.slice(-4)}.

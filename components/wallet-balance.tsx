@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Connection, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js"
-import { SOLANA_ENDPOINT } from "@/lib/solana-config"
+import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js"
 import { Loader2, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { createRateLimitedConnection } from "@/lib/solana-helpers"
 
 interface WalletBalanceProps {
   walletAddress: string
@@ -24,7 +24,7 @@ export function WalletBalance({ walletAddress, label }: WalletBalanceProps) {
     setError(null)
 
     try {
-      const connection = new Connection(SOLANA_ENDPOINT, "confirmed")
+      const connection = createRateLimitedConnection()
       const publicKey = new PublicKey(walletAddress)
       const balanceInLamports = await connection.getBalance(publicKey)
       const balanceInSol = balanceInLamports / LAMPORTS_PER_SOL
@@ -43,20 +43,22 @@ export function WalletBalance({ walletAddress, label }: WalletBalanceProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm font-medium">{label}:</span>
+      <span className="text-sm font-medium dark:text-gray-300">{label}:</span>
       {loading ? (
         <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
       ) : error ? (
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger className="text-sm text-red-500">Error</TooltipTrigger>
+            <TooltipTrigger className="text-sm text-red-500 dark:text-red-400">Error</TooltipTrigger>
             <TooltipContent>
               <p>{error}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       ) : (
-        <span className="text-sm font-bold">{balance !== null ? `${balance.toFixed(4)} SOL` : "Unknown"}</span>
+        <span className="text-sm font-bold dark:text-gray-200">
+          {balance !== null ? `${balance.toFixed(4)} SOL` : "Unknown"}
+        </span>
       )}
       <TooltipProvider>
         <Tooltip>

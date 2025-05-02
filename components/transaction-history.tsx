@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from "react"
 import { useWallet } from "@solana/wallet-adapter-react"
-import { Connection, PublicKey } from "@solana/web3.js"
-import { SOLANA_ENDPOINT, formatDate } from "@/lib/solana-config"
+import { PublicKey } from "@solana/web3.js"
+import { formatDate } from "@/lib/solana-config"
 import { ArrowDownRight, ArrowUpRight, ExternalLink, Loader2, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { WalletBalance } from "./wallet-balance"
 import { Card, CardContent } from "@/components/ui/card"
+import { createRateLimitedConnection } from "@/lib/solana-helpers"
 
 interface Transaction {
   signature: string
@@ -34,33 +35,6 @@ export function TransactionHistory({ recipientAddress }: TransactionHistoryProps
   const [error, setError] = useState<string | null>(null)
   const [showBalances, setShowBalances] = useState(false)
 
-  // Create a throttled connection to avoid rate limits
-  const getThrottledConnection = () => {
-    const connection = new Connection(SOLANA_ENDPOINT, {
-      commitment: "confirmed",
-      confirmTransactionInitialTimeout: 60000,
-    })
-
-    // Wrap the getParsedTransaction method to add delay between requests
-    const originalGetParsedTransaction = connection.getParsedTransaction.bind(connection)
-    connection.getParsedTransaction = async (signature, ...args) => {
-      try {
-        // Add a small delay between requests to avoid rate limiting
-        await new Promise((resolve) => setTimeout(resolve, 300))
-        return await originalGetParsedTransaction(signature, ...args)
-      } catch (error) {
-        if (error instanceof Error && error.message.includes("429")) {
-          // If we hit a rate limit, wait longer and retry
-          await new Promise((resolve) => setTimeout(resolve, 2000))
-          return await originalGetParsedTransaction(signature, ...args)
-        }
-        throw error
-      }
-    }
-
-    return connection
-  }
-
   // Fetch transactions for connected wallet
   useEffect(() => {
     const fetchConnectedWalletTransactions = async () => {
@@ -70,10 +44,10 @@ export function TransactionHistory({ recipientAddress }: TransactionHistoryProps
       setError(null)
 
       try {
-        const connection = getThrottledConnection()
+        const connection = createRateLimitedConnection()
 
         // Limit to fewer signatures to reduce API calls
-        const signatures = await connection.getSignaturesForAddress(publicKey, { limit: 5 })
+        const signatures = await connection.getSignaturesForAddress(publicKey, { limit: 3 })
 
         const parsedTransactions: Transaction[] = []
 
@@ -128,13 +102,13 @@ export function TransactionHistory({ recipientAddress }: TransactionHistoryProps
       setError(null)
 
       try {
-        const connection = getThrottledConnection()
+        const connection = createRateLimitedConnection()
 
         try {
           const recipientPublicKey = new PublicKey(recipientAddress)
 
           // Limit to fewer signatures to reduce API calls
-          const signatures = await connection.getSignaturesForAddress(recipientPublicKey, { limit: 5 })
+          const signatures = await connection.getSignaturesForAddress(recipientPublicKey, { limit: 3 })
 
           const parsedTransactions: Transaction[] = []
 
@@ -216,9 +190,9 @@ export function TransactionHistory({ recipientAddress }: TransactionHistoryProps
 
     if (transactions.length === 0) {
       return (
-        <div className="text-center py-8 bg-gray-50 rounded-lg">
-          <p className="text-gray-500">No transactions found on devnet</p>
-          <p className="text-xs text-gray-400 mt-2">Try sending some SOL on the devnet first</p>
+        <div className="text-center py-8 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <p className="text-gray-500 dark:text-gray-400">No transactions found on devnet</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">Try sending some SOL on the devnet first</p>
         </div>
       )
     }
@@ -226,28 +200,32 @@ export function TransactionHistory({ recipientAddress }: TransactionHistoryProps
     return (
       <div className="space-y-3">
         {transactions.map((tx) => (
-          <div key={tx.signature} className="flex items-center p-3 bg-gray-50 rounded-lg">
-            <div className={`p-2 rounded-full mr-3 ${tx.isIncoming ? "bg-green-100" : "bg-blue-100"}`}>
+          <div key={tx.signature} className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <div
+              className={`p-2 rounded-full mr-3 ${tx.isIncoming ? "bg-green-100 dark:bg-green-900" : "bg-blue-100 dark:bg-blue-900"}`}
+            >
               {tx.isIncoming ? (
-                <ArrowDownRight className="h-5 w-5 text-green-600" />
+                <ArrowDownRight className="h-5 w-5 text-green-600 dark:text-green-400" />
               ) : (
-                <ArrowUpRight className="h-5 w-5 text-blue-600" />
+                <ArrowUpRight className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               )}
             </div>
             <div className="flex-1">
               <div className="flex justify-between">
-                <span className="font-medium">{tx.isIncoming ? "Received" : "Sent"} SOL</span>
-                <span className={`font-medium ${tx.isIncoming ? "text-green-600" : "text-blue-600"}`}>
+                <span className="font-medium dark:text-gray-200">{tx.isIncoming ? "Received" : "Sent"} SOL</span>
+                <span
+                  className={`font-medium ${tx.isIncoming ? "text-green-600 dark:text-green-400" : "text-blue-600 dark:text-blue-400"}`}
+                >
                   {tx.isIncoming ? "+" : "-"}
                   {tx.amount.toFixed(4)} SOL
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-500">{formatDate(tx.timestamp)}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{formatDate(tx.timestamp)}</span>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 text-xs text-gray-500"
+                  className="h-6 text-xs text-gray-500 dark:text-gray-400"
                   onClick={() => openExplorer(tx.signature)}
                 >
                   <ExternalLink className="h-3 w-3 mr-1" /> Explorer
@@ -263,7 +241,7 @@ export function TransactionHistory({ recipientAddress }: TransactionHistoryProps
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">Transaction History</h2>
+        <h2 className="text-lg font-semibold dark:text-gray-200">Transaction History</h2>
         <Button variant="outline" size="sm" onClick={toggleBalances} className="text-xs">
           {showBalances ? "Hide Balances" : "Show Balances"}
         </Button>
@@ -289,11 +267,11 @@ export function TransactionHistory({ recipientAddress }: TransactionHistoryProps
             <TabsTrigger value="recipient">Recipient Wallet</TabsTrigger>
           </TabsList>
           <TabsContent value="connected" className="mt-4">
-            <h3 className="text-sm font-medium mb-3">Transactions for your wallet</h3>
+            <h3 className="text-sm font-medium mb-3 dark:text-gray-300">Transactions for your wallet</h3>
             {renderTransactions(connectedWalletTxs, loadingConnected, publicKey.toBase58())}
           </TabsContent>
           <TabsContent value="recipient" className="mt-4">
-            <h3 className="text-sm font-medium mb-3">Transactions for recipient wallet</h3>
+            <h3 className="text-sm font-medium mb-3 dark:text-gray-300">Transactions for recipient wallet</h3>
             {renderTransactions(recipientWalletTxs, loadingRecipient, recipientAddress)}
           </TabsContent>
         </Tabs>

@@ -10,7 +10,6 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Solana Tap-to-Pay",
   description: "Create Solana payment requests easily",
-    generator: 'Kuldeep'
 }
 
 export default function RootLayout({
@@ -19,9 +18,9 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="light">
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <SolanaWalletProvider>{children}</SolanaWalletProvider>
         </ThemeProvider>
       </body>
