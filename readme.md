@@ -1,6 +1,6 @@
 # 💳 Solana Tap-to-Pay
 
-A modern and minimal **Solana-based crypto payment request UI**, built for the **100xDevs Mini Hackathon**.
+A modern and minimal **Solana-based crypto payment request UI**.
 
 ## 🚀 Features
 
