@@ -15,6 +15,7 @@ interface PaymentConfirmationProps {
   reference?: string
   paymentLink: string
   onClose: () => void
+  onPaymentComplete: () => void
 }
 
 export function PaymentConfirmation({
@@ -23,6 +24,7 @@ export function PaymentConfirmation({
   reference,
   paymentLink,
   onClose,
+  onPaymentComplete,
 }: PaymentConfirmationProps) {
   const [isConfirmed, setIsConfirmed] = useState(false)
   const [payerAddress, setPayerAddress] = useState<string | null>(null)
@@ -111,13 +113,14 @@ export function PaymentConfirmation({
   }
 
   const handleNewPayment = () => {
+    onPaymentComplete()
     onClose()
     router.refresh()
   }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md mx-auto">
         <CardHeader className={isConfirmed ? "bg-green-100 dark:bg-green-900" : "bg-blue-100 dark:bg-blue-900"}>
           <CardTitle className="flex items-center gap-2">
             {isConfirmed ? (
@@ -173,9 +176,9 @@ export function PaymentConfirmation({
                   to {recipientAddress.slice(0, 6)}...{recipientAddress.slice(-6)}
                 </p>
 
-                {/* QR Code displayed in the modal */}
-                <div className="bg-white dark:bg-gray-700 p-3 rounded-lg inline-block">
-                  <QRCodeGenerator paymentLink={paymentLink} />
+                {/* QR Code displayed in the modal - smaller size */}
+                <div className="bg-white dark:bg-gray-700 p-2 rounded-lg inline-block">
+                  <QRCodeGenerator paymentLink={paymentLink} showControls={false} size={150} />
                 </div>
               </div>
 

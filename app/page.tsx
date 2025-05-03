@@ -19,6 +19,7 @@ export default function SolanaPaymentRequest() {
   const [paymentReference, setPaymentReference] = useState<string>("")
   const [paymentLink, setPaymentLink] = useState<string>("")
   const [showConfirmation, setShowConfirmation] = useState(false)
+  const [resetFormKey, setResetFormKey] = useState(0) // Key to force form reset
 
   const handlePaymentGenerated = (link: string) => {
     setRecentPaymentLinks((prev) => [link, ...prev.slice(0, 4)])
@@ -45,6 +46,11 @@ export default function SolanaPaymentRequest() {
 
   const closeConfirmation = () => {
     setShowConfirmation(false)
+  }
+
+  const handlePaymentComplete = () => {
+    // Reset the form by incrementing the key
+    setResetFormKey((prev) => prev + 1)
   }
 
   return (
@@ -78,7 +84,7 @@ export default function SolanaPaymentRequest() {
                 <TabsTrigger value="history">Transaction History</TabsTrigger>
               </TabsList>
               <TabsContent value="create" className="mt-4">
-                <PaymentForm onPaymentGenerated={handlePaymentGenerated} />
+                <PaymentForm key={resetFormKey} onPaymentGenerated={handlePaymentGenerated} />
               </TabsContent>
               <TabsContent value="history" className="mt-4">
                 <TransactionHistory recipientAddress={recipientAddress} />
@@ -100,6 +106,7 @@ export default function SolanaPaymentRequest() {
           reference={paymentReference}
           paymentLink={paymentLink}
           onClose={closeConfirmation}
+          onPaymentComplete={handlePaymentComplete}
         />
       )}
     </div>

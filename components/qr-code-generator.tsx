@@ -8,13 +8,14 @@ import { useTheme } from "next-themes"
 interface QRCodeGeneratorProps {
   paymentLink: string
   showControls?: boolean
+  size?: number
 }
 
-export default function QRCodeGenerator({ paymentLink, showControls = true }: QRCodeGeneratorProps) {
+export default function QRCodeGenerator({ paymentLink, showControls = true, size = 200 }: QRCodeGeneratorProps) {
   const [copied, setCopied] = useState(false)
   const [qrImage, setQrImage] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const { theme, resolvedTheme } = useTheme()
+  const { resolvedTheme } = useTheme()
 
   // Generate QR code as an SVG string
   useEffect(() => {
@@ -31,7 +32,7 @@ export default function QRCodeGenerator({ paymentLink, showControls = true }: QR
         const response = await fetch(
           `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
             paymentLink,
-          )}&size=200x200&format=svg&color=${darkColor}&bgcolor=${lightColor}`,
+          )}&size=${size}x${size}&format=svg&color=${darkColor}&bgcolor=${lightColor}`,
         )
 
         if (!response.ok) throw new Error("Failed to generate QR code")
@@ -46,7 +47,7 @@ export default function QRCodeGenerator({ paymentLink, showControls = true }: QR
     }
 
     generateQR()
-  }, [paymentLink, resolvedTheme])
+  }, [paymentLink, resolvedTheme, size])
 
   const copyToClipboard = async () => {
     try {
@@ -67,7 +68,7 @@ export default function QRCodeGenerator({ paymentLink, showControls = true }: QR
 
     const downloadUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
       paymentLink,
-    )}&size=200x200&format=png&color=${darkColor}&bgcolor=${lightColor}&download=1`
+    )}&size=${size}x${size}&format=png&color=${darkColor}&bgcolor=${lightColor}&download=1`
 
     // Open in a new tab which will trigger download
     window.open(downloadUrl, "_blank")
@@ -94,16 +95,16 @@ export default function QRCodeGenerator({ paymentLink, showControls = true }: QR
           className={`${showControls ? "bg-white p-4 rounded-lg border border-gray-300 dark:bg-gray-700 dark:border-gray-600" : ""}`}
         >
           {isLoading ? (
-            <div className="flex justify-center items-center h-[200px] w-[200px]">
+            <div className={`flex justify-center items-center h-[${size}px] w-[${size}px]`}>
               <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
             </div>
           ) : qrImage ? (
             <div
-              className="h-[200px] w-[200px] flex items-center justify-center"
+              className={`h-[${size}px] w-[${size}px] flex items-center justify-center`}
               dangerouslySetInnerHTML={{ __html: qrImage }}
             />
           ) : (
-            <div className="flex justify-center items-center h-[200px] w-[200px] text-red-500">
+            <div className={`flex justify-center items-center h-[${size}px] w-[${size}px] text-red-500`}>
               Failed to generate QR code
             </div>
           )}
