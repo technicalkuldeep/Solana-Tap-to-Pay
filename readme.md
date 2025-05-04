@@ -1,4 +1,4 @@
-# 💳 Solana Tap-to-Pay
+# 💳 Solana Tap-to-Pay ( Project for 100xMini Hackathon)
 
 A modern and minimal **Solana-based crypto payment request UI**.
 
